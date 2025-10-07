@@ -9,10 +9,14 @@ import (
 
 func Migrate(DB *gorm.DB) {
 	DB.AutoMigrate(
+		&models.User{},
 		&models.Category{},
 		&models.Listing{},
 		&models.Wallet{},
 		&models.Transaction{},
+		&models.Chat{},
+		&models.Message{},
+		&models.MessageSeen{},
 	)
 
 	log.Println("Database migrated successfully")
