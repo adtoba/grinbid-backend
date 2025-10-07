@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/adtoba/grinbid-backend/src/initializers"
+	"github.com/adtoba/grinbid-backend/src/migrate"
 )
 
 func main() {
@@ -16,5 +17,6 @@ func main() {
 
 	fmt.Println("Config:", config)
 
-	initializers.ConnectDB(&config)
+	DB := initializers.ConnectDB(&config)
+	migrate.Migrate(DB)
 }
