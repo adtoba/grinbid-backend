@@ -17,6 +17,7 @@ func Migrate(DB *gorm.DB) {
 		&models.Chat{},
 		&models.Message{},
 		&models.MessageSeen{},
+		&models.Session{},
 	)
 
 	log.Println("Database migrated successfully")

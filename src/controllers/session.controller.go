@@ -16,13 +16,14 @@ func NewSessionController(db *gorm.DB) *SessionController {
 	return &SessionController{DB: db}
 }
 
-func (sc *SessionController) CreateSession(c *gin.Context, s *models.Session) (*models.Session, error) {
+func (sc *SessionController) CreateSession(c *gin.Context, s models.Session) (*models.Session, error) {
 	result := sc.DB.Create(&s)
 
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to create session: %w", result.Error)
 	}
-	return s, nil
+
+	return &s, nil
 }
 
 func (sc *SessionController) GetSession(c *gin.Context, id string) (*models.Session, error) {

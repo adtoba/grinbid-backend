@@ -10,12 +10,12 @@ import (
 type User struct {
 	ID              string    `json:"id" gorm:"primaryKey"`
 	FullName        string    `json:"full_name" gorm:"not null"`
-	Email           string    `json:"email" gorm:"not null"`
+	Email           string    `json:"email" gorm:"uniqueIndex;not null"`
 	Password        string    `json:"password" gorm:"not null"`
 	Phone           string    `json:"phone" gorm:"not null"`
 	Location        string    `json:"address" gorm:"not null"`
 	Role            string    `json:"role" gorm:"not null"`
-	Nin             string    `json:"nin" gorm:"not null"`
+	Nin             string    `json:"nin"`
 	IsVerified      bool      `json:"is_verified" gorm:"default:false"`
 	IsBlocked       bool      `json:"is_blocked" gorm:"default:false"`
 	IsEmailVerified bool      `json:"is_email_verified" gorm:"default:false"`
@@ -61,4 +61,36 @@ func (user *User) ToUserResponse() UserResponse {
 		CreatedAt:       user.CreatedAt,
 		UpdatedAt:       user.UpdatedAt,
 	}
+}
+
+type LoginUserRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password"`
+}
+
+type CreateUserRequest struct {
+	FullName string `json:"full_name" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=8"`
+	Phone    string `json:"phone" binding:"required"`
+	Location string `json:"location" binding:"required"`
+}
+
+type LoginUserResponse struct {
+	SessionID             string       `json:"session_id"`
+	AccessToken           string       `json:"access_token"`
+	RefreshToken          string       `json:"refresh_token"`
+	User                  UserResponse `json:"user"`
+	AccessTokenExpiresAt  time.Time    `json:"access_token_expires_at"`
+	RefreshTokenExpiresAt time.Time    `json:"refresh_token_expires_at"`
+}
+
+type RenewAccessTokenRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+type RenewAccessTokenResponse struct {
+	AccessToken          string    `json:"access_token"`
+	RefreshToken         string    `json:"refresh_token"`
+	AccessTokenExpiresAt time.Time `json:"access_token_expires_at"`
 }

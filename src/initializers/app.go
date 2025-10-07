@@ -8,6 +8,7 @@ type Config struct {
 	DBHost     string `mapstructure:"POSTGRES_HOST"`
 	DBPort     string `mapstructure:"POSTGRES_PORT"`
 	DBName     string `mapstructure:"POSTGRES_DB"`
+	ServerPort string `mapstructure:"PORT"`
 	JWT_SECRET string `mapstructure:"JWT_SECRET"`
 }
 
