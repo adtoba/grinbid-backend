@@ -54,6 +54,26 @@ func (lc *ListingController) GetAllListings(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponse("listings fetched successfully", listings))
 }
 
+func (lc *ListingController) GetAllListingsByUserID(c *gin.Context) {
+	var listings []models.Listing
+	result := lc.DB.Find(&listings, "user_id = ?", c.Param("user_id"))
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse("internal server error", nil))
+		return
+	}
+	c.JSON(http.StatusOK, models.SuccessResponse("listings fetched successfully", listings))
+}
+
+func (lc *ListingController) GetMyListings(c *gin.Context) {
+	var listings []models.Listing
+	result := lc.DB.Find(&listings, "user_id = ?", c.MustGet("user_id"))
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse("internal server error", nil))
+		return
+	}
+	c.JSON(http.StatusOK, models.SuccessResponse("listings fetched successfully", listings))
+}
+
 func (lc *ListingController) GetListing(c *gin.Context) {
 	var listing models.Listing
 	result := lc.DB.First(&listing, "id = ?", c.Param("id"))

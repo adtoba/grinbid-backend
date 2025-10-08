@@ -26,9 +26,16 @@ var (
 	ListingController      *controllers.ListingController
 	ListingRouteController *routes.ListingRouteController
 
+	AdminController      *controllers.AdminController
+	AdminRouteController *routes.AdminRouteController
+
 	SessionController *controllers.SessionController
 	RedisClient       *redis.Client
-	ctx               = context.Background()
+
+	CategoryController      *controllers.CategoryController
+	CategoryRouteController *routes.CategoryRouteController
+
+	ctx = context.Background()
 )
 
 func init() {
@@ -63,6 +70,12 @@ func init() {
 	ListingController = controllers.NewListingController(DB)
 	ListingRouteController = routes.NewListingRouteController(*ListingController)
 
+	AdminController = controllers.NewAdminController(DB)
+	AdminRouteController = routes.NewAdminRouteController(*AdminController)
+
+	CategoryController = controllers.NewCategoryController(DB)
+	CategoryRouteController = routes.NewCategoryRouteController(*CategoryController)
+
 	server = gin.Default()
 }
 
@@ -93,7 +106,8 @@ func main() {
 	{
 		AuthRouteController.RegisterRoutes(v1, RedisClient)
 		ListingRouteController.RegisterRoutes(v1, RedisClient)
-
+		AdminRouteController.RegisterRoutes(v1, RedisClient)
+		CategoryRouteController.RegisterRoutes(v1, RedisClient)
 	}
 
 	log.Fatal((server.Run(":" + config.ServerPort)))

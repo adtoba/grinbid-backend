@@ -16,6 +16,7 @@ func NewAdminController(db *gorm.DB) *AdminController {
 	return &AdminController{DB: db}
 }
 
+// GetAllUsers gets all users
 func (ac *AdminController) GetAllUsers(c *gin.Context) {
 	var users []models.User
 	result := ac.DB.Find(&users)
@@ -26,6 +27,7 @@ func (ac *AdminController) GetAllUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponse("users fetched successfully", users))
 }
 
+// GetUser gets a user
 func (ac *AdminController) GetUser(c *gin.Context) {
 	var user models.User
 	result := ac.DB.First(&user, "id = ?", c.Param("id"))
@@ -36,6 +38,7 @@ func (ac *AdminController) GetUser(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponse("user fetched successfully", user))
 }
 
+// BlockUser blocks a user
 func (ac *AdminController) BlockUser(c *gin.Context) {
 	var user models.User
 	result := ac.DB.Model(&user).Where("id = ?", c.Param("id")).Update("is_blocked", true)
@@ -43,9 +46,10 @@ func (ac *AdminController) BlockUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse("internal server error", nil))
 		return
 	}
-	c.JSON(http.StatusOK, models.SuccessResponse("user blocked successfully", user))
+	c.JSON(http.StatusOK, models.SuccessResponse("user blocked successfully", nil))
 }
 
+// UnblockUser unblocks a user
 func (ac *AdminController) UnblockUser(c *gin.Context) {
 	var user models.User
 	result := ac.DB.Model(&user).Where("id = ?", c.Param("id")).Update("is_blocked", false)
@@ -53,5 +57,26 @@ func (ac *AdminController) UnblockUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse("internal server error", nil))
 		return
 	}
-	c.JSON(http.StatusOK, models.SuccessResponse("user unblocked successfully", user))
+	c.JSON(http.StatusOK, models.SuccessResponse("user unblocked successfully", nil))
+}
+
+// CreateCategory creates a category
+func (ac *AdminController) CreateCategory(c *gin.Context) {
+	var payload models.CreateCategoryRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse("invalid request", err.Error()))
+		return
+	}
+
+	category := models.Category{
+		Name: payload.Name,
+		Icon: payload.Icon,
+	}
+
+	result := ac.DB.Create(&category)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse("internal server error", nil))
+		return
+	}
+	c.JSON(http.StatusOK, models.SuccessResponse("category created successfully", category))
 }

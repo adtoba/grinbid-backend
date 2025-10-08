@@ -20,5 +20,7 @@ func (rc *ListingRouteController) RegisterRoutes(rg *gin.RouterGroup, redisClien
 	router.POST("/", middleware.AuthMiddleware(redisClient), rc.listingController.CreateListing)
 	router.GET("/", middleware.AuthMiddleware(redisClient), rc.listingController.GetAllListings)
 	router.GET("/:id", middleware.AuthMiddleware(redisClient), rc.listingController.GetListing)
+	router.GET("/me", middleware.AuthMiddleware(redisClient), rc.listingController.GetMyListings)
+	router.GET("/user/:user_id", middleware.AuthMiddleware(redisClient), rc.listingController.GetAllListingsByUserID)
 	router.GET("/category/:category_id", middleware.AuthMiddleware(redisClient), rc.listingController.GetListingByCategory)
 }
