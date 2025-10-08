@@ -1,0 +1,19 @@
+package middleware
+
+import (
+	"net/http"
+
+	"github.com/adtoba/grinbid-backend/src/models"
+	"github.com/gin-gonic/gin"
+)
+
+func IsAdmin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userRole := c.MustGet("user_role")
+		if userRole != "admin" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, models.ErrorResponse("unauthorized", nil))
+			return
+		}
+		c.Next()
+	}
+}

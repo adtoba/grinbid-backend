@@ -11,7 +11,7 @@ type Listing struct {
 	ID          string    `json:"id" gorm:"primaryKey"`
 	Title       string    `json:"title" gorm:"not null"`
 	Description string    `json:"description" gorm:"not null"`
-	Price       int       `json:"price" gorm:"not null"`
+	Price       float64   `json:"price" gorm:"not null"`
 	Image       string    `json:"image" gorm:"not null"`
 	Status      string    `json:"status" gorm:"not null"`
 	Location    string    `json:"location" gorm:"not null"`
@@ -27,11 +27,21 @@ func (listing *Listing) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
+type CreateListingRequest struct {
+	Title       string  `json:"title" binding:"required"`
+	Description string  `json:"description" binding:"required"`
+	Price       float64 `json:"price" binding:"required"`
+	Image       string  `json:"image" binding:"required"`
+	Location    string  `json:"location" binding:"required"`
+	Condition   string  `json:"condition" binding:"required"`
+	CategoryID  string  `json:"category_id" binding:"required"`
+}
+
 type ListingResponse struct {
 	ID          string    `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
-	Price       int       `json:"price"`
+	Price       float64   `json:"price"`
 	Image       string    `json:"image"`
 	Status      string    `json:"status"`
 	Location    string    `json:"location"`

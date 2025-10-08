@@ -8,6 +8,7 @@ import (
 
 	"github.com/adtoba/grinbid-backend/src/controllers"
 	"github.com/adtoba/grinbid-backend/src/initializers"
+	"github.com/adtoba/grinbid-backend/src/middleware"
 	"github.com/adtoba/grinbid-backend/src/migrate"
 	"github.com/adtoba/grinbid-backend/src/models"
 	"github.com/adtoba/grinbid-backend/src/routes"
@@ -21,9 +22,13 @@ var (
 	server              *gin.Engine
 	AuthController      *controllers.AuthController
 	AuthRouteController *routes.AuthRouteController
-	SessionController   *controllers.SessionController
-	RedisClient         *redis.Client
-	ctx                 = context.Background()
+
+	ListingController      *controllers.ListingController
+	ListingRouteController *routes.ListingRouteController
+
+	SessionController *controllers.SessionController
+	RedisClient       *redis.Client
+	ctx               = context.Background()
 )
 
 func init() {
@@ -54,6 +59,10 @@ func init() {
 	SessionController = controllers.NewSessionController(DB)
 	AuthController = controllers.NewAuthController(DB, tokenMaker, SessionController, RedisClient)
 	AuthRouteController = routes.NewAuthRouteController(*AuthController)
+
+	ListingController = controllers.NewListingController(DB)
+	ListingRouteController = routes.NewListingRouteController(*ListingController)
+
 	server = gin.Default()
 }
 
@@ -76,13 +85,15 @@ func main() {
 		MaxAge:           12 * 60 * 60, // 12 hours
 	}))
 
-	router.GET("/health", func(c *gin.Context) {
+	router.GET("/health", middleware.AuthMiddleware(RedisClient), func(c *gin.Context) {
 		c.JSON(http.StatusOK, models.SuccessResponse("server is running", nil))
 	})
 
 	v1 := router.Group("/api/v1")
 	{
 		AuthRouteController.RegisterRoutes(v1, RedisClient)
+		ListingRouteController.RegisterRoutes(v1, RedisClient)
+
 	}
 
 	log.Fatal((server.Run(":" + config.ServerPort)))
