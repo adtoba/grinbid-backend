@@ -1,22 +1,25 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/adtoba/grinbid-backend/src/models"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 )
 
 type JWTMaker struct {
-	secretKey string
+	secretKey   string
+	redisClient *redis.Client
 }
 
-func NewJWTMaker(secretKey string) *JWTMaker {
-	return &JWTMaker{secretKey: secretKey}
+func NewJWTMaker(secretKey string, redisClient *redis.Client) *JWTMaker {
+	return &JWTMaker{secretKey: secretKey, redisClient: redisClient}
 }
 
-func (maker *JWTMaker) CreateToken(userID string, email string, role string, duration time.Duration) (string, *models.UserClaims, error) {
+func (maker *JWTMaker) CreateToken(userID string, email string, role string, duration time.Duration, isRefreshToken bool) (string, *models.UserClaims, error) {
 	claims, err := models.NewUserClaims(userID, email, role, duration)
 	if err != nil {
 		return "", nil, err
@@ -28,7 +31,11 @@ func (maker *JWTMaker) CreateToken(userID string, email string, role string, dur
 		return "", nil, err
 	}
 
-	return tokenStr, claims, nil
+	if isRefreshToken {
+		err = maker.redisClient.Set(context.Background(), tokenStr, userID, duration).Err()
+	}
+
+	return tokenStr, claims, err
 }
 
 func (maker *JWTMaker) VerifyToken(token string) (*models.UserClaims, error) {

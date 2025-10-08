@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"github.com/adtoba/grinbid-backend/src/utils"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 )
 
 var (
@@ -20,6 +22,8 @@ var (
 	AuthController      *controllers.AuthController
 	AuthRouteController *routes.AuthRouteController
 	SessionController   *controllers.SessionController
+	RedisClient         *redis.Client
+	ctx                 = context.Background()
 )
 
 func init() {
@@ -34,7 +38,19 @@ func init() {
 	DB := initializers.ConnectDB(&config)
 	migrate.Migrate(DB)
 
-	tokenMaker := utils.NewJWTMaker(config.JWT_SECRET)
+	RedisClient = redis.NewClient(&redis.Options{
+		Addr:     config.RedisAddress,
+		Username: config.RedisUsername,
+		Password: config.RedisPassword,
+		DB:       config.RedisDB,
+	})
+
+	_, err = RedisClient.Ping(ctx).Result()
+	if err != nil {
+		log.Fatal("Failed to connect to Redis:", err)
+	}
+
+	tokenMaker := utils.NewJWTMaker(config.JWT_SECRET, RedisClient)
 	SessionController = controllers.NewSessionController(DB)
 	AuthController = controllers.NewAuthController(DB, tokenMaker, SessionController)
 	AuthRouteController = routes.NewAuthRouteController(*AuthController)
@@ -66,7 +82,7 @@ func main() {
 
 	v1 := router.Group("/api/v1")
 	{
-		AuthRouteController.RegisterRoutes(v1)
+		AuthRouteController.RegisterRoutes(v1, RedisClient)
 	}
 
 	log.Fatal((server.Run(":" + config.ServerPort)))

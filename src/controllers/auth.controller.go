@@ -46,37 +46,22 @@ func (ac *AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	accessToken, accessClaims, err := ac.TokenMaker.CreateToken(user.ID, user.Email, user.Role, time.Minute*15)
+	accessToken, _, err := ac.TokenMaker.CreateToken(user.ID, user.Email, user.Role, time.Minute*15, false)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorResponse("internal server error", nil))
 		return
 	}
 
-	refreshToken, refreshClaims, err := ac.TokenMaker.CreateToken(user.ID, user.Email, user.Role, time.Hour*24)
+	refreshToken, _, err := ac.TokenMaker.CreateToken(user.ID, user.Email, user.Role, time.Hour*24, true)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorResponse("internal server error", nil))
 		return
-	}
-
-	session, err := ac.SessionController.CreateSession(c, models.Session{
-		ID:           refreshClaims.RegisteredClaims.ID,
-		Email:        user.Email,
-		RefreshToken: refreshToken,
-		IsRevoked:    false,
-		ExpiresAt:    refreshClaims.RegisteredClaims.ExpiresAt.Time,
-	})
-
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorResponse("error creating session", nil))
 	}
 
 	res := models.LoginUserResponse{
-		SessionID:             session.ID,
-		AccessToken:           accessToken,
-		RefreshToken:          refreshToken,
-		User:                  user.ToUserResponse(),
-		AccessTokenExpiresAt:  accessClaims.RegisteredClaims.ExpiresAt.Time,
-		RefreshTokenExpiresAt: refreshClaims.RegisteredClaims.ExpiresAt.Time,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		User:         user.ToUserResponse(),
 	}
 
 	c.JSON(http.StatusOK, models.SuccessResponse("login successful", res))
