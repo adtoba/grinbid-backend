@@ -18,4 +18,5 @@ func (rc *AuthRouteController) RegisterRoutes(rg *gin.RouterGroup, redisClient *
 	router := rg.Group("/auth")
 	router.POST("/login", rc.authController.Login)
 	router.POST("/register", rc.authController.CreateUser)
+	router.POST("/refresh-token", rc.authController.RefreshToken)
 }

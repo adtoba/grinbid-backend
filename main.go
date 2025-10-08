@@ -52,7 +52,7 @@ func init() {
 
 	tokenMaker := utils.NewJWTMaker(config.JWT_SECRET, RedisClient)
 	SessionController = controllers.NewSessionController(DB)
-	AuthController = controllers.NewAuthController(DB, tokenMaker, SessionController)
+	AuthController = controllers.NewAuthController(DB, tokenMaker, SessionController, RedisClient)
 	AuthRouteController = routes.NewAuthRouteController(*AuthController)
 	server = gin.Default()
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/adtoba/grinbid-backend/src/models"
 	"github.com/adtoba/grinbid-backend/src/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
@@ -15,10 +16,11 @@ type AuthController struct {
 	DB                *gorm.DB
 	TokenMaker        *utils.JWTMaker
 	SessionController *SessionController
+	RedisClient       *redis.Client
 }
 
-func NewAuthController(db *gorm.DB, tokenMaker *utils.JWTMaker, sessionController *SessionController) *AuthController {
-	return &AuthController{DB: db, TokenMaker: tokenMaker, SessionController: sessionController}
+func NewAuthController(db *gorm.DB, tokenMaker *utils.JWTMaker, sessionController *SessionController, redisClient *redis.Client) *AuthController {
+	return &AuthController{DB: db, TokenMaker: tokenMaker, SessionController: sessionController, RedisClient: redisClient}
 }
 
 func (ac *AuthController) Login(c *gin.Context) {
@@ -52,7 +54,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	refreshToken, _, err := ac.TokenMaker.CreateToken(user.ID, user.Email, user.Role, time.Hour*24, true)
+	refreshToken, _, err := ac.TokenMaker.CreateToken(user.ID, user.Email, user.Role, time.Hour*168, true)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, models.ErrorResponse("internal server error", nil))
 		return
@@ -98,4 +100,77 @@ func (ac *AuthController) CreateUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, models.SuccessResponse("user created successfully", user.ToUserResponse()))
+}
+
+func (ac *AuthController) RefreshToken(c *gin.Context) {
+	// Bind the request body
+	var payload *models.RenewAccessTokenRequest
+
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse("invalid request", err.Error()))
+		return
+	}
+
+	// Check if the refresh token is in the Redis client
+	userID, err := ac.RedisClient.Get(c, payload.RefreshToken).Result()
+	if err == redis.Nil {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse("invalid or expired refresh token", nil))
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse("internal server error", nil))
+		return
+	}
+
+	// Verify the refresh token
+	userClaims, err := ac.TokenMaker.VerifyToken(payload.RefreshToken)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse("invalid or expired refresh token", nil))
+		return
+	}
+
+	// Check if the user ID matches the refresh token
+	if userClaims.ID != userID {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse("invalid or expired refresh token", nil))
+		return
+	}
+
+	// Revoke the old refresh token
+	err = ac.RedisClient.Del(c, payload.RefreshToken).Err()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse("Failed to revoke old refresh token", nil))
+		return
+	}
+
+	// Blacklist the old refresh token
+	ttl := time.Until(userClaims.RegisteredClaims.ExpiresAt.Time)
+	if ttl > 0 {
+		err = ac.RedisClient.Set(c, "blacklist:"+payload.RefreshToken, "revoked", ttl).Err()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse("Failed to blacklist old refresh token", nil))
+			return
+		}
+	}
+
+	// Create a new access token
+	newAccessToken, _, err := ac.TokenMaker.CreateToken(userID, userClaims.Email, userClaims.Role, time.Minute*15, false)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse("Failed to create new access token", nil))
+		return
+	}
+
+	// Create a new refresh token
+	newRefreshToken, _, err := ac.TokenMaker.CreateToken(userID, userClaims.Email, userClaims.Role, time.Hour*168, true)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse("Failed to create new refresh token", nil))
+		return
+	}
+
+	// Return the new tokens
+	res := models.RenewAccessTokenResponse{
+		AccessToken:  newAccessToken,
+		RefreshToken: newRefreshToken,
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponse("Token renewed successfully", res))
+
 }

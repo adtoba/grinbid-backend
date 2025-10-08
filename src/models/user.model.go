@@ -87,7 +87,6 @@ type RenewAccessTokenRequest struct {
 }
 
 type RenewAccessTokenResponse struct {
-	AccessToken          string    `json:"access_token"`
-	RefreshToken         string    `json:"refresh_token"`
-	AccessTokenExpiresAt time.Time `json:"access_token_expires_at"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 }
