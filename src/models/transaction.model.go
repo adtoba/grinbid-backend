@@ -8,17 +8,20 @@ import (
 )
 
 type Transaction struct {
-	ID             string    `json:"id" gorm:"primaryKey"`
-	Amount         float64   `json:"amount" gorm:"not null"`
-	Status         string    `json:"status" gorm:"not null"`
-	Type           string    `json:"type" gorm:"not null"`
-	TransactionRef string    `json:"transaction_ref" gorm:"not null"`
-	ListingID      string    `json:"listing_id" gorm:"not null"`
-	WalletID       string    `json:"wallet_id" gorm:"not null"`
-	SenderID       string    `json:"sender_id" gorm:"not null"`
-	ReceiverID     string    `json:"receiver_id" gorm:"not null"`
-	CreatedAt      time.Time `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt      time.Time `json:"updated_at" gorm:"autoUpdateTime"`
+	ID               string    `json:"id" gorm:"primaryKey"`
+	Amount           float64   `json:"amount" gorm:"not null"`
+	Status           string    `json:"status" gorm:"not null"`
+	Type             string    `json:"type" gorm:"not null"`
+	PaymentMethod    string    `json:"payment_method" gorm:"not null"`
+	TransactionRef   string    `json:"transaction_ref" gorm:"not null"`
+	ListingID        string    `json:"listing_id"`
+	SenderWalletID   string    `json:"sender_wallet_id"`
+	ReceiverWalletID string    `json:"receiver_wallet_id"`
+	SenderID         string    `json:"sender_id"`
+	ReceiverID       string    `json:"receiver_id"`
+	Dtt              int       `json:"dtt" gorm:"default:0"`
+	CreatedAt        time.Time `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt        time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 }
 
 func (transaction *Transaction) BeforeCreate(tx *gorm.DB) (err error) {

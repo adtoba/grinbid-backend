@@ -19,7 +19,12 @@ import (
 )
 
 var (
-	server              *gin.Engine
+	server      *gin.Engine
+	RedisClient *redis.Client
+
+	WalletController      *controllers.WalletController
+	WalletRouteController *routes.WalletRouteController
+
 	AuthController      *controllers.AuthController
 	AuthRouteController *routes.AuthRouteController
 
@@ -28,9 +33,6 @@ var (
 
 	AdminController      *controllers.AdminController
 	AdminRouteController *routes.AdminRouteController
-
-	SessionController *controllers.SessionController
-	RedisClient       *redis.Client
 
 	CategoryController      *controllers.CategoryController
 	CategoryRouteController *routes.CategoryRouteController
@@ -63,8 +65,11 @@ func init() {
 	}
 
 	tokenMaker := utils.NewJWTMaker(config.JWT_SECRET, RedisClient)
-	SessionController = controllers.NewSessionController(DB)
-	AuthController = controllers.NewAuthController(DB, tokenMaker, SessionController, RedisClient)
+
+	WalletController = controllers.NewWalletController(DB)
+	WalletRouteController = routes.NewWalletRouteController(*WalletController)
+
+	AuthController = controllers.NewAuthController(DB, tokenMaker, RedisClient, WalletController)
 	AuthRouteController = routes.NewAuthRouteController(*AuthController)
 
 	ListingController = controllers.NewListingController(DB)
@@ -108,6 +113,7 @@ func main() {
 		ListingRouteController.RegisterRoutes(v1, RedisClient)
 		AdminRouteController.RegisterRoutes(v1, RedisClient)
 		CategoryRouteController.RegisterRoutes(v1, RedisClient)
+		WalletRouteController.RegisterRoutes(v1, RedisClient)
 	}
 
 	log.Fatal((server.Run(":" + config.ServerPort)))

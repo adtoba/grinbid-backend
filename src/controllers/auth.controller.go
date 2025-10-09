@@ -13,14 +13,14 @@ import (
 )
 
 type AuthController struct {
-	DB                *gorm.DB
-	TokenMaker        *utils.JWTMaker
-	SessionController *SessionController
-	RedisClient       *redis.Client
+	DB               *gorm.DB
+	TokenMaker       *utils.JWTMaker
+	RedisClient      *redis.Client
+	WalletController *WalletController
 }
 
-func NewAuthController(db *gorm.DB, tokenMaker *utils.JWTMaker, sessionController *SessionController, redisClient *redis.Client) *AuthController {
-	return &AuthController{DB: db, TokenMaker: tokenMaker, SessionController: sessionController, RedisClient: redisClient}
+func NewAuthController(db *gorm.DB, tokenMaker *utils.JWTMaker, redisClient *redis.Client, walletController *WalletController) *AuthController {
+	return &AuthController{DB: db, TokenMaker: tokenMaker, RedisClient: redisClient, WalletController: walletController}
 }
 
 func (ac *AuthController) Login(c *gin.Context) {
@@ -98,6 +98,9 @@ func (ac *AuthController) CreateUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse("error creating user", nil))
 		return
 	}
+
+	// Create a wallet for the user
+	ac.WalletController.CreateWallet(c, user.ID)
 
 	c.JSON(http.StatusCreated, models.SuccessResponse("user created successfully", user.ToUserResponse()))
 }
