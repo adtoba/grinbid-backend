@@ -18,8 +18,7 @@ func NewWalletRouteController(walletController controllers.WalletController) *Wa
 func (rc *WalletRouteController) RegisterRoutes(rg *gin.RouterGroup, redisClient *redis.Client) {
 	router := rg.Group("/wallet")
 	router.GET("/", middleware.AuthMiddleware(redisClient), rc.walletController.GetWallet)
-	router.POST("/purchase", middleware.AuthMiddleware(redisClient), rc.walletController.Purchase)
-	router.POST("/topup", middleware.AuthMiddleware(redisClient), rc.walletController.TopUp)
-	router.POST("/withdraw", middleware.AuthMiddleware(redisClient), rc.walletController.Withdraw)
+	router.POST("/purchase", middleware.AuthMiddleware(redisClient), rc.walletController.PurchaseFromWallet)
 	router.GET("/transactions", middleware.AuthMiddleware(redisClient), rc.walletController.GetWalletTransactions)
+	router.POST("/initialize-transaction", middleware.AuthMiddleware(redisClient), rc.walletController.InitializeTransaction)
 }

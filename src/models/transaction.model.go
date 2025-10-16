@@ -13,7 +13,7 @@ type Transaction struct {
 	Status           string    `json:"status" gorm:"not null"`
 	Type             string    `json:"type" gorm:"not null"`
 	PaymentMethod    string    `json:"payment_method" gorm:"not null"`
-	TransactionRef   string    `json:"transaction_ref" gorm:"not null"`
+	TransactionRef   string    `json:"transaction_ref"`
 	ListingID        string    `json:"listing_id"`
 	SenderWalletID   string    `json:"sender_wallet_id"`
 	ReceiverWalletID string    `json:"receiver_wallet_id"`

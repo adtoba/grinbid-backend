@@ -8,19 +8,22 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/adtoba/grinbid-backend/src/models"
+	"github.com/adtoba/grinbid-backend/src/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type WalletController struct {
-	DB *gorm.DB
+	DB              *gorm.DB
+	PaystackService *services.PaystackService
 }
 
-func NewWalletController(db *gorm.DB) *WalletController {
-	return &WalletController{DB: db}
+func NewWalletController(db *gorm.DB, paystackService *services.PaystackService) *WalletController {
+	return &WalletController{DB: db, PaystackService: paystackService}
 }
 
 // CreateWallet creates a wallet for a user
@@ -55,12 +58,8 @@ func (wc *WalletController) GetWallet(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponse("wallet fetched successfully", wallet))
 }
 
-// GetWalletTransactions gets all transactions for a wallet
-
-// WithdrawFromWallet withdraws from a wallet
-
 // Purchase purchases a listing
-func (wc *WalletController) Purchase(c *gin.Context) {
+func (wc *WalletController) PurchaseFromWallet(c *gin.Context) {
 	var payload models.PurchaseRequest
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse("invalid request", err.Error()))
@@ -118,90 +117,54 @@ func (wc *WalletController) Purchase(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponse("Wallet charged successfully", nil))
 }
 
-func (wc *WalletController) TopUp(c *gin.Context) {
-	var payload models.TopUpWalletRequest
+func (wc *WalletController) InitializeTransaction(c *gin.Context) {
+	var payload models.InitializeTransactionRequest
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse("invalid request", err.Error()))
 		return
 	}
 
-	// Verify the payment via payment provider
-
-	// Get the wallet
-	var wallet models.Wallet
+	userEmail := c.MustGet("user_email").(string)
 	userID := c.MustGet("user_id").(string)
-	result := wc.DB.First(&wallet, "user_id = ?", userID)
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, models.ErrorResponse("wallet not found", nil))
+
+	var senderWallet models.Wallet
+	wc.DB.First(&senderWallet, "user_id = ?", userID)
+	if senderWallet.ID == "" {
+		c.JSON(http.StatusNotFound, models.ErrorResponse("sender wallet not found", nil))
 		return
 	}
-	wallet.AvailableBalance += payload.Amount
+
+	var receiverWallet models.Wallet
+
+	if payload.ReceiverID == "" {
+		payload.ReceiverID = userID
+	} else {
+		wc.DB.First(&receiverWallet, "user_id = ?", payload.ReceiverID)
+		if receiverWallet.ID == "" {
+			c.JSON(http.StatusNotFound, models.ErrorResponse("receiver wallet not found", nil))
+			return
+		}
+	}
 
 	var transaction models.Transaction
 	transaction.Amount = payload.Amount
-	transaction.Type = "topup"
-	transaction.TransactionRef = payload.Ref
-	transaction.SenderWalletID = wallet.ID
-	transaction.SenderID = userID
-	transaction.Status = "success"
-
-	result = wc.DB.Save(&wallet)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse("error saving wallet", nil))
-		return
-	}
-
-	result = wc.DB.Create(&transaction)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse("error saving transaction", nil))
-		return
-	}
-
-	// Send transaction notification to user via push notification
-
-	c.JSON(http.StatusOK, models.SuccessResponse("Topup successful", nil))
-}
-
-func (wc *WalletController) Withdraw(c *gin.Context) {
-	var payload models.WithdrawFromWalletRequest
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse("invalid request", err.Error()))
-		return
-	}
-
-	var wallet models.Wallet
-	userID := c.MustGet("user_id").(string)
-	result := wc.DB.First(&wallet, "user_id = ?", userID)
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, models.ErrorResponse("wallet not found", nil))
-		return
-	}
-
-	if wallet.AvailableBalance < payload.Amount {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse("Insufficient balance", nil))
-		return
-	}
-
-	wallet.AvailableBalance -= payload.Amount
-
-	// Send transaction notification to user via push notification
-
-	// Send money to user's account via payment provider
-
-	var transaction models.Transaction
-	transaction.Amount = payload.Amount
-	transaction.Type = "withdraw"
-	transaction.PaymentMethod = payload.PaymentMethod
+	transaction.Type = payload.Type
+	transaction.Status = "initiated"
 	transaction.TransactionRef = uuid.NewString()
-	transaction.SenderWalletID = wallet.ID
 	transaction.SenderID = userID
-	transaction.Status = "success"
-	transaction.TransactionRef = payload.Ref
+	transaction.ReceiverID = payload.ReceiverID
+	transaction.ListingID = payload.ListingID
+	transaction.Dtt = payload.Dtt
+	transaction.SenderWalletID = senderWallet.ID
+	transaction.ReceiverWalletID = receiverWallet.ID
 
-	wc.DB.Save(&wallet)
-	wc.DB.Create(&transaction)
+	response, err := wc.PaystackService.InitializeTransaction(strconv.FormatFloat(payload.Amount, 'f', -1, 64), userEmail, transaction)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse("error initializing transaction", err.Error()))
+		return
+	}
 
-	c.JSON(http.StatusOK, models.SuccessResponse("Withdrawal successful", nil))
+	c.JSON(http.StatusOK, models.SuccessResponse("Transaction initialized successfully", response))
 }
 
 func (wc *WalletController) GetWalletTransactions(c *gin.Context) {
@@ -213,5 +176,37 @@ func (wc *WalletController) GetWalletTransactions(c *gin.Context) {
 		return
 	}
 
+	c.JSON(http.StatusOK, models.SuccessResponse("Transactions fetched successfully", transactions))
+}
+
+func (wc *WalletController) GetAllWalletTransactions(c *gin.Context) {
+	var transactions []models.Transaction
+	result := wc.DB.Find(&transactions)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse("transactions not found", nil))
+		return
+	}
+	c.JSON(http.StatusOK, models.SuccessResponse("Transactions fetched successfully", transactions))
+}
+
+func (wc *WalletController) GetWalletTransactionById(c *gin.Context) {
+	var transaction models.Transaction
+	id := c.Param("id")
+	result := wc.DB.First(&transaction, "id = ?", id)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse("transaction not found", nil))
+		return
+	}
+	c.JSON(http.StatusOK, models.SuccessResponse("Transaction fetched successfully", transaction))
+}
+
+func (wc *WalletController) GetWalletTransactionsByUserId(c *gin.Context) {
+	var transactions []models.Transaction
+	id := c.Param("id")
+	result := wc.DB.Find(&transactions, "sender_id = ? OR receiver_id = ?", id, id)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, models.ErrorResponse("transactions not found", nil))
+		return
+	}
 	c.JSON(http.StatusOK, models.SuccessResponse("Transactions fetched successfully", transactions))
 }

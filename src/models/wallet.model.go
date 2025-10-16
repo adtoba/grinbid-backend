@@ -53,3 +53,11 @@ type WalletResponse struct {
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
 }
+
+type InitializeTransactionRequest struct {
+	Amount     float64 `json:"amount" binding:"required"`
+	Type       string  `json:"type" binding:"required"`
+	ReceiverID string  `json:"receiver_id"`
+	ListingID  string  `json:"listing_id"`
+	Dtt        int     `json:"dtt" gorm:"default:0"`
+}

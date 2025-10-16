@@ -8,11 +8,12 @@ import (
 )
 
 type AdminRouteController struct {
-	adminController controllers.AdminController
+	adminController  controllers.AdminController
+	walletController controllers.WalletController
 }
 
-func NewAdminRouteController(adminController controllers.AdminController) *AdminRouteController {
-	return &AdminRouteController{adminController}
+func NewAdminRouteController(adminController controllers.AdminController, walletController controllers.WalletController) *AdminRouteController {
+	return &AdminRouteController{adminController, walletController}
 }
 
 func (rc *AdminRouteController) RegisterRoutes(rg *gin.RouterGroup, redisClient *redis.Client) {
@@ -22,4 +23,7 @@ func (rc *AdminRouteController) RegisterRoutes(rg *gin.RouterGroup, redisClient 
 	router.POST("/users/:id/block", middleware.AuthMiddleware(redisClient), middleware.IsAdmin(), rc.adminController.BlockUser)
 	router.POST("/users/:id/unblock", middleware.AuthMiddleware(redisClient), middleware.IsAdmin(), rc.adminController.UnblockUser)
 	router.POST("/categories", middleware.AuthMiddleware(redisClient), middleware.IsAdmin(), rc.adminController.CreateCategory)
+	router.GET("/wallets/transactions", middleware.AuthMiddleware(redisClient), middleware.IsAdmin(), rc.walletController.GetAllWalletTransactions)
+	router.GET("/wallets/transactions/:id", middleware.AuthMiddleware(redisClient), middleware.IsAdmin(), rc.walletController.GetWalletTransactionById)
+	router.GET("/wallets/transactions/user/:id", middleware.AuthMiddleware(redisClient), middleware.IsAdmin(), rc.walletController.GetWalletTransactionsByUserId)
 }

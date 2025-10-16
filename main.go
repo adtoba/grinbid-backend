@@ -12,6 +12,7 @@ import (
 	"github.com/adtoba/grinbid-backend/src/migrate"
 	"github.com/adtoba/grinbid-backend/src/models"
 	"github.com/adtoba/grinbid-backend/src/routes"
+	"github.com/adtoba/grinbid-backend/src/services"
 	"github.com/adtoba/grinbid-backend/src/utils"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -36,6 +37,12 @@ var (
 
 	CategoryController      *controllers.CategoryController
 	CategoryRouteController *routes.CategoryRouteController
+
+	WebhookController      *controllers.WebhooksController
+	WebhookRouteController *routes.WebhookRouteController
+
+	PaystackService *services.PaystackService
+	WalletService   *services.WalletService
 
 	ctx = context.Background()
 )
@@ -66,7 +73,10 @@ func init() {
 
 	tokenMaker := utils.NewJWTMaker(config.JWT_SECRET, RedisClient)
 
-	WalletController = controllers.NewWalletController(DB)
+	PaystackService = services.NewPaystackService(config.PaystackSecretKey)
+	WalletService = services.NewWalletService(DB)
+
+	WalletController = controllers.NewWalletController(DB, PaystackService)
 	WalletRouteController = routes.NewWalletRouteController(*WalletController)
 
 	AuthController = controllers.NewAuthController(DB, tokenMaker, RedisClient, WalletController)
@@ -76,10 +86,13 @@ func init() {
 	ListingRouteController = routes.NewListingRouteController(*ListingController)
 
 	AdminController = controllers.NewAdminController(DB)
-	AdminRouteController = routes.NewAdminRouteController(*AdminController)
+	AdminRouteController = routes.NewAdminRouteController(*AdminController, *WalletController)
 
 	CategoryController = controllers.NewCategoryController(DB)
 	CategoryRouteController = routes.NewCategoryRouteController(*CategoryController)
+
+	WebhookController = controllers.NewWebhooksController(DB, WalletService)
+	WebhookRouteController = routes.NewWebhookRouteController(*WebhookController)
 
 	server = gin.Default()
 }
@@ -114,6 +127,7 @@ func main() {
 		AdminRouteController.RegisterRoutes(v1, RedisClient)
 		CategoryRouteController.RegisterRoutes(v1, RedisClient)
 		WalletRouteController.RegisterRoutes(v1, RedisClient)
+		WebhookRouteController.RegisterRoutes(v1, RedisClient)
 	}
 
 	log.Fatal((server.Run(":" + config.ServerPort)))
