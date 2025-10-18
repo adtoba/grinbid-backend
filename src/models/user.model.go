@@ -9,6 +9,7 @@ import (
 
 type User struct {
 	ID              string    `json:"id" gorm:"primaryKey"`
+	Username        string    `json:"username" gorm:"uniqueIndex;not null"`
 	FullName        string    `json:"full_name" gorm:"not null"`
 	Email           string    `json:"email" gorm:"uniqueIndex;not null"`
 	Password        string    `json:"password" gorm:"not null"`
@@ -31,6 +32,7 @@ func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
 
 type UserResponse struct {
 	ID              string    `json:"id"`
+	Username        string    `json:"username"`
 	FullName        string    `json:"full_name"`
 	Email           string    `json:"email"`
 	Phone           string    `json:"phone"`
@@ -48,6 +50,7 @@ type UserResponse struct {
 func (user *User) ToUserResponse() UserResponse {
 	return UserResponse{
 		ID:              user.ID,
+		Username:        user.Username,
 		FullName:        user.FullName,
 		Email:           user.Email,
 		Phone:           user.Phone,

@@ -167,6 +167,10 @@ func (wc *WalletController) InitializeTransaction(c *gin.Context) {
 	c.JSON(http.StatusOK, models.SuccessResponse("Transaction initialized successfully", response))
 }
 
+func (wc *WalletController) InitiateWithdrawal(c *gin.Context) {
+
+}
+
 func (wc *WalletController) GetWalletTransactions(c *gin.Context) {
 	var transactions []models.Transaction
 	userID := c.MustGet("user_id").(string)

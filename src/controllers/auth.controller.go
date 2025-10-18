@@ -83,7 +83,15 @@ func (ac *AuthController) CreateUser(c *gin.Context) {
 		return
 	}
 
+	// Generate unique username
+	username, err := utils.GenerateUsername(ac.DB, payload.FullName, payload.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse("error generating username", nil))
+		return
+	}
+
 	user := models.User{
+		Username: username,
 		FullName: payload.FullName,
 		Email:    payload.Email,
 		Password: hashedPassword,
