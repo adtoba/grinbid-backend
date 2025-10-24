@@ -47,6 +47,21 @@ type UserResponse struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
+type SimpleUserResponse struct {
+	ID              string    `json:"id"`
+	Username        string    `json:"username"`
+	FullName        string    `json:"full_name"`
+	Email           string    `json:"email"`
+	Phone           string    `json:"phone"`
+	Location        string    `json:"location"`
+	IsVerified      bool      `json:"is_verified"`
+	IsBlocked       bool      `json:"is_blocked"`
+	IsEmailVerified bool      `json:"is_email_verified"`
+	IsPhoneVerified bool      `json:"is_phone_verified"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
 func (user *User) ToUserResponse() UserResponse {
 	return UserResponse{
 		ID:              user.ID,
@@ -66,6 +81,23 @@ func (user *User) ToUserResponse() UserResponse {
 	}
 }
 
+func (user *User) ToSimpleUserResponse() SimpleUserResponse {
+	return SimpleUserResponse{
+		ID:              user.ID,
+		Username:        user.Username,
+		FullName:        user.FullName,
+		Email:           user.Email,
+		Phone:           user.Phone,
+		Location:        user.Location,
+		IsVerified:      user.IsVerified,
+		IsBlocked:       user.IsBlocked,
+		IsEmailVerified: user.IsEmailVerified,
+		IsPhoneVerified: user.IsPhoneVerified,
+		CreatedAt:       user.CreatedAt,
+		UpdatedAt:       user.UpdatedAt,
+	}
+}
+
 type LoginUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password"`
@@ -76,7 +108,7 @@ type CreateUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=8"`
 	Phone    string `json:"phone" binding:"required"`
-	Location string `json:"location" binding:"required"`
+	Location string `json:"location"`
 }
 
 type LoginUserResponse struct {

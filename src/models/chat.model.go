@@ -61,7 +61,8 @@ func (a *StringArray) Scan(value interface{}) error {
 
 type Chat struct {
 	ID           string      `json:"id" gorm:"primaryKey"`
-	ProjectID    string      `json:"project_id"`
+	ListingID    string      `json:"listing_id"`
+	ListingName  string      `json:"listing_name"`
 	Participants StringArray `json:"participants" gorm:"type:text[]"`
 	UserID       string      `json:"user_id"`
 	IsGroupChat  bool        `json:"is_group_chat" gorm:"default:false"`
@@ -75,10 +76,11 @@ func (chat *Chat) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-func (chat *Chat) ToChatResponse(users []UserResponse, lastMessage MessageResponse) ChatResponse {
+func (chat *Chat) ToChatResponse(users []SimpleUserResponse, lastMessage MessageResponse) ChatResponse {
 	return ChatResponse{
 		ID:           chat.ID,
-		ProjectID:    chat.ProjectID,
+		ListingID:    chat.ListingID,
+		ListingName:  chat.ListingName,
 		Users:        users,
 		Participants: chat.Participants,
 		IsGroupChat:  chat.IsGroupChat,
@@ -90,19 +92,22 @@ func (chat *Chat) ToChatResponse(users []UserResponse, lastMessage MessageRespon
 }
 
 type ChatResponse struct {
-	ID           string          `json:"id"`
-	ProjectID    string          `json:"project_id"`
-	Participants []string        `json:"participants"`
-	Users        []UserResponse  `json:"users"`
-	LastMessage  MessageResponse `json:"last_message"`
-	CreatedAt    time.Time       `json:"created_at"`
-	UpdatedAt    time.Time       `json:"updated_at"`
-	IsGroupChat  bool            `json:"is_group_chat"`
-	GroupName    string          `json:"group_name"`
+	ID           string               `json:"id"`
+	ListingID    string               `json:"listing_id"`
+	ListingName  string               `json:"listing_name"`
+	Participants []string             `json:"participants"`
+	Users        []SimpleUserResponse `json:"users"`
+	LastMessage  MessageResponse      `json:"last_message"`
+	CreatedAt    time.Time            `json:"created_at"`
+	UpdatedAt    time.Time            `json:"updated_at"`
+	IsGroupChat  bool                 `json:"is_group_chat"`
+	GroupName    string               `json:"group_name"`
 }
 
 type CreateChatRequest struct {
 	Participants []string `json:"participants" gorm:"type:text[]"`
+	ListingID    string   `json:"listing_id"`
+	ListingName  string   `json:"listing_name"`
 	IsGroupChat  bool     `json:"is_group_chat" gorm:"default:false"`
 	GroupName    string   `json:"group_name"`
 }

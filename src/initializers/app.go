@@ -15,6 +15,10 @@ type Config struct {
 	RedisPassword     string `mapstructure:"REDIS_PASSWORD"`
 	RedisDB           int    `mapstructure:"REDIS_DB"`
 	PaystackSecretKey string `mapstructure:"PAYSTACK_SECRET_KEY"`
+	PusherAppID       string `mapstructure:"PUSHER_APP_ID"`
+	PusherKey         string `mapstructure:"PUSHER_KEY"`
+	PusherSecret      string `mapstructure:"PUSHER_SECRET"`
+	PusherCluster     string `mapstructure:"PUSHER_CLUSTER"`
 }
 
 func LoadConfig(path string) (config Config, err error) {

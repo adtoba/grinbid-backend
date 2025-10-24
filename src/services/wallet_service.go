@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/adtoba/grinbid-backend/src/models"
 	"github.com/adtoba/grinbid-backend/src/utils"
@@ -28,6 +29,10 @@ func (ws *WalletService) TopupWallet(c *gin.Context, transaction models.Transact
 
 	wallet.AvailableBalance += transaction.Amount
 	result := ws.DB.Save(&wallet)
+
+	fmt.Println("Transaction topup successful")
+	fmt.Println("userID", userID)
+
 	if result.Error != nil {
 		return result.Error
 	}

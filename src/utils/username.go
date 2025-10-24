@@ -12,40 +12,40 @@ import (
 
 // GenerateUsername creates a unique username from fullname and email
 func GenerateUsername(db *gorm.DB, fullName, email string) (string, error) {
-	// Clean and prepare the base username from fullname
-	baseUsername := cleanUsername(extractBaseFromFullName(fullName))
+	// // Clean and prepare the base username from fullname
+	// baseUsername := cleanUsername(extractBaseFromFullName(fullName))
 
-	// If base username is too short, use email prefix
-	if len(baseUsername) < 3 {
-		baseUsername = cleanUsername(extractBaseFromEmail(email))
-	}
+	// // If base username is too short, use email prefix
+	// if len(baseUsername) < 3 {
+	// 	baseUsername = cleanUsername(extractBaseFromEmail(email))
+	// }
 
-	// Ensure minimum length
-	if len(baseUsername) < 3 {
-		baseUsername = "user"
-	}
+	// // Ensure minimum length
+	// if len(baseUsername) < 3 {
+	// 	baseUsername = "user"
+	// }
 
-	// Try the base username first
-	username := baseUsername
-	if isUsernameAvailable(db, username) {
-		return username, nil
-	}
+	// // Try the base username first
+	// username := baseUsername
+	// if isUsernameAvailable(db, username) {
+	// 	return username, nil
+	// }
 
-	// Generate variations with numbers
-	for i := 1; i <= 9999; i++ {
-		// Try with random number
-		randomNum := rand.Intn(9999) + 1
-		username = fmt.Sprintf("%s%d", baseUsername, randomNum)
-		if isUsernameAvailable(db, username) {
-			return username, nil
-		}
+	// // Generate variations with numbers
+	// for i := 1; i <= 9999; i++ {
+	// 	// Try with random number
+	// 	randomNum := rand.Intn(9999) + 1
+	// 	username = fmt.Sprintf("%s%d", baseUsername, randomNum)
+	// 	if isUsernameAvailable(db, username) {
+	// 		return username, nil
+	// 	}
 
-		// Try with sequential number
-		username = fmt.Sprintf("%s%d", baseUsername, i)
-		if isUsernameAvailable(db, username) {
-			return username, nil
-		}
-	}
+	// 	// Try with sequential number
+	// 	username = fmt.Sprintf("%s%d", baseUsername, i)
+	// 	if isUsernameAvailable(db, username) {
+	// 		return username, nil
+	// 	}
+	// }
 
 	// If all else fails, generate completely random username
 	return generateRandomUsername(db), nil

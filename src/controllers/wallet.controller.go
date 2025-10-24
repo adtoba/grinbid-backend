@@ -150,6 +150,7 @@ func (wc *WalletController) InitializeTransaction(c *gin.Context) {
 	transaction.Amount = payload.Amount
 	transaction.Type = payload.Type
 	transaction.Status = "initiated"
+	transaction.ItemName = payload.ItemName
 	transaction.TransactionRef = uuid.NewString()
 	transaction.SenderID = userID
 	transaction.ReceiverID = payload.ReceiverID
@@ -174,7 +175,7 @@ func (wc *WalletController) InitiateWithdrawal(c *gin.Context) {
 func (wc *WalletController) GetWalletTransactions(c *gin.Context) {
 	var transactions []models.Transaction
 	userID := c.MustGet("user_id").(string)
-	result := wc.DB.Find(&transactions, "sender_id = ? OR receiver_id = ?", userID, userID)
+	result := wc.DB.Order("created_at DESC").Find(&transactions, "sender_id = ? OR receiver_id = ?", userID, userID)
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, models.ErrorResponse("transactions not found", nil))
 		return

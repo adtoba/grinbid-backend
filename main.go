@@ -16,6 +16,7 @@ import (
 	"github.com/adtoba/grinbid-backend/src/utils"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/pusher/pusher-http-go"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -40,6 +41,9 @@ var (
 
 	WebhookController      *controllers.WebhooksController
 	WebhookRouteController *routes.WebhookRouteController
+
+	ChatController      *controllers.ChatController
+	ChatRouteController *routes.ChatRouteController
 
 	PaystackService *services.PaystackService
 	WalletService   *services.WalletService
@@ -71,6 +75,23 @@ func init() {
 		log.Fatal("Failed to connect to Redis:", err)
 	}
 
+	pusherClient := pusher.Client{
+		AppID:   config.PusherAppID,
+		Key:     config.PusherKey,
+		Secret:  config.PusherSecret,
+		Cluster: config.PusherCluster,
+		Secure:  true,
+	}
+
+	go func() {
+		data := map[string]string{
+			"message": "Hello World",
+		}
+
+		pusherClient.Trigger("test-channel", "test-event", data)
+		log.Println("Pusher message sent")
+	}()
+
 	tokenMaker := utils.NewJWTMaker(config.JWT_SECRET, RedisClient)
 
 	PaystackService = services.NewPaystackService(config.PaystackSecretKey)
@@ -93,6 +114,9 @@ func init() {
 
 	WebhookController = controllers.NewWebhooksController(DB, WalletService)
 	WebhookRouteController = routes.NewWebhookRouteController(*WebhookController)
+
+	ChatController = controllers.NewChatController(DB, &pusherClient)
+	ChatRouteController = routes.NewChatRouteController(*ChatController)
 
 	server = gin.Default()
 }
@@ -128,6 +152,7 @@ func main() {
 		CategoryRouteController.RegisterRoutes(v1, RedisClient)
 		WalletRouteController.RegisterRoutes(v1, RedisClient)
 		WebhookRouteController.RegisterRoutes(v1, RedisClient)
+		ChatRouteController.RegisterRoutes(v1, RedisClient)
 	}
 
 	log.Fatal((server.Run(":" + config.ServerPort)))

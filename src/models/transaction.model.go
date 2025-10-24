@@ -10,6 +10,7 @@ import (
 type Transaction struct {
 	ID               string    `json:"id" gorm:"primaryKey"`
 	Amount           float64   `json:"amount" gorm:"not null"`
+	ItemName         string    `json:"item_name" gorm:"not null"`
 	Status           string    `json:"status" gorm:"not null"`
 	Type             string    `json:"type" gorm:"not null"`
 	PaymentMethod    string    `json:"payment_method" gorm:"not null"`

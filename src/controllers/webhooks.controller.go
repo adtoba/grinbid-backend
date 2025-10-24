@@ -46,8 +46,10 @@ func (wc *WebhooksController) PaystackWebhook(c *gin.Context) {
 		if metadata["type"] == "topup" {
 			transaction.SenderWalletID = metadata["sender_wallet_id"].(string)
 			transaction.PaymentMethod = "paystack"
+			transaction.ItemName = "Wallet Topup"
 			wc.WalletService.TopupWallet(c, transaction)
 		} else {
+			transaction.ItemName = metadata["item_name"].(string)
 			transaction.ListingID = metadata["listing_id"].(string)
 			transaction.ReceiverID = metadata["receiver_id"].(string)
 			transaction.SenderWalletID = metadata["sender_wallet_id"].(string)

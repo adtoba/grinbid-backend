@@ -24,6 +24,13 @@ func (lc *ListingController) CreateListing(c *gin.Context) {
 
 	userID := c.MustGet("user_id").(string)
 
+	var user models.User
+	res := lc.DB.First(&user, "id = ?", userID)
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse("internal server error", nil))
+		return
+	}
+
 	listing := models.Listing{
 		Title:       payload.Title,
 		Description: payload.Description,
@@ -33,6 +40,7 @@ func (lc *ListingController) CreateListing(c *gin.Context) {
 		Location:    payload.Location,
 		Condition:   payload.Condition,
 		CategoryID:  payload.CategoryID,
+		User:        user.ToSimpleUserResponse(),
 		UserID:      userID,
 	}
 
@@ -46,7 +54,10 @@ func (lc *ListingController) CreateListing(c *gin.Context) {
 
 func (lc *ListingController) GetAllListings(c *gin.Context) {
 	var listings []models.Listing
-	result := lc.DB.Find(&listings).Where("status = ?", "active")
+
+	userID := c.MustGet("user_id").(string)
+
+	result := lc.DB.Find(&listings).Where("status = ? AND user_id != ?", "active", userID)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse("internal server error", nil))
 		return
@@ -88,10 +99,13 @@ func (lc *ListingController) GetListingByCategory(c *gin.Context) {
 	var listings []models.Listing
 	categoryID := c.Param("category_id")
 
-	result := lc.DB.Find(&listings, "category_id = ? AND status = ?", categoryID, "active")
+	userID := c.MustGet("user_id").(string)
+
+	result := lc.DB.Find(&listings, "category_id = ? AND status = ? AND user_id != ?", categoryID, "active", userID)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse("internal server error", nil))
 		return
 	}
+
 	c.JSON(http.StatusOK, models.SuccessResponse("listings fetched successfully", listings))
 }

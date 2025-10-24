@@ -57,6 +57,7 @@ type WalletResponse struct {
 type InitializeTransactionRequest struct {
 	Amount     float64 `json:"amount" binding:"required"`
 	Type       string  `json:"type" binding:"required"`
+	ItemName   string  `json:"item_name"`
 	ReceiverID string  `json:"receiver_id"`
 	ListingID  string  `json:"listing_id"`
 	Dtt        int     `json:"dtt" gorm:"default:0"`
