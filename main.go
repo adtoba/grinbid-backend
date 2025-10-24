@@ -45,6 +45,9 @@ var (
 	ChatController      *controllers.ChatController
 	ChatRouteController *routes.ChatRouteController
 
+	MessageController      *controllers.MessageController
+	MessageRouteController *routes.MessageRouteController
+
 	PaystackService *services.PaystackService
 	WalletService   *services.WalletService
 
@@ -118,6 +121,9 @@ func init() {
 	ChatController = controllers.NewChatController(DB, &pusherClient)
 	ChatRouteController = routes.NewChatRouteController(*ChatController)
 
+	MessageController = controllers.NewMessageController(DB, &pusherClient)
+	MessageRouteController = routes.NewMessageRouteController(*MessageController)
+
 	server = gin.Default()
 }
 
@@ -153,6 +159,7 @@ func main() {
 		WalletRouteController.RegisterRoutes(v1, RedisClient)
 		WebhookRouteController.RegisterRoutes(v1, RedisClient)
 		ChatRouteController.RegisterRoutes(v1, RedisClient)
+		MessageRouteController.RegisterRoutes(v1, RedisClient)
 	}
 
 	log.Fatal((server.Run(":" + config.ServerPort)))

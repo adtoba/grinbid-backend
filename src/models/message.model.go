@@ -11,6 +11,7 @@ type Message struct {
 	ID          string      `json:"id" gorm:"primaryKey"`
 	ChatID      string      `json:"chat_id"`
 	SenderID    string      `json:"sender_id"`
+	ListingID   string      `json:"listing_id"`
 	Content     string      `json:"content"`
 	MessageType string      `json:"message_type"`
 	Attachments StringArray `json:"attachments" gorm:"type:text[]"`
@@ -74,12 +75,13 @@ type MessageResponse struct {
 }
 
 type CreateMessageRequest struct {
+	ListingID   string   `json:"listing_id"`
 	Content     string   `json:"content" binding:"required"`
 	Attachments []string `json:"attachments" gorm:"type:text[]"`
 }
 
 type GetMessagesResponse struct {
 	ChatID    string            `json:"chat_id"`
-	ProjectID string            `json:"project_id"`
+	ListingID string            `json:"listing_id"`
 	Messages  []MessageResponse `json:"messages"`
 }
